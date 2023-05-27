@@ -31,18 +31,13 @@ def main():
     st.header("Chat with PDF 💬")
     # upload a PDF file
     pdf = st.file_uploader("Upload your PDF", type="pdf")
-    # read the PDF file
+    # check for pdf and read present
     if pdf is not None:
         pdf_reader = PdfReader(pdf)
-        # test - display the PDF object
-        #st.write(pdf_reader)
-        # st.write(len(pdf_reader.pages))
         # extract the text from the PDF
         page_text = ""
         for page in pdf_reader.pages:
             page_text += page.extract_text()
-        # test - display the text
-        #st.write(page_text)
         # split the text into chunks
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
@@ -76,7 +71,7 @@ def main():
             # create the LLM object
             llm = OpenAI(temperature=0.0, max_tokens=1000, model_name="gpt-3.5-turbo")
             # load the question answering chain
-            chain = load_qa_chain(llm=llm,verbose=True, chain_type="stuff")
+            chain = load_qa_chain(llm=llm, chain_type="stuff")
             # generate the answer
             with get_openai_callback() as cb:
                 response = chain.run(input_documents=docs, question=question)
