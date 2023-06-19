@@ -2,7 +2,7 @@
 import streamlit as st
 from dotenv import load_dotenv
 import pickle
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 from streamlit_extras.add_vertical_space import add_vertical_space
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -36,7 +36,9 @@ def main():
     # check for pdf file
     if pdf is not None:
         # process text in pdf and convert to chunks
-        chunks = process_text(pdf)
+        chuck_size = 1000
+        chuck_overlap = 200
+        chunks = process_text(pdf, chuck_size, chuck_overlap)
         # get the embeddings
         vector_store = get_embeddings(chunks, pdf)
         # ask the user for a question
@@ -53,7 +55,7 @@ def upload_pdf():
     return pdf
 
 # convert the pdf to text chunks
-def process_text(pdf):
+def process_text(pdf, chuck_size, chuck_overlap):
     pdf_reader = PdfReader(pdf)
     # extract the text from the PDF
     page_text = ""
@@ -61,8 +63,8 @@ def process_text(pdf):
         page_text += page.extract_text()
     # split the text into chunks
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
+        chunk_size=chuck_size,
+        chunk_overlap=chuck_overlap,
         length_function=len
         )
     chunks = text_splitter.split_text(text=page_text)
