@@ -3,6 +3,7 @@
 ChatGPT-like app for querying pdf files.  User can upload a pdf file and the app will allow for queries against it.  Built on Langchain, OpenAI, FAISS, Streamlit. 
 Inspired by YouTube Video from [Prompt Engineer](https://youtube.com/@engineerprompt).
 
+![Process Flow](images/screenshot-02-process-flow.png)
 ## Installation
 ### Prerequisites:
 - Python 3.8 and above
@@ -30,6 +31,8 @@ streamlit run app.py
 http://localhost:8501/
 ``` 
 ####
+## Screenshots
+![User Prompt & Reponse](images/screenshot-01-user-prompt-response.png "User Prompt & Reponse")
 
 ## Contributing
 
