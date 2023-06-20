@@ -7,7 +7,7 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.chains.question_answering import load_qa_chain
 # get callback to get stats on query cost
 from langchain.callbacks import get_openai_callback
@@ -36,10 +36,9 @@ def main():
     # check for pdf file
     if pdf is not None:
         # process text in pdf and convert to chunks
-        chuck_size = 1000
-        chuck_overlap = 200
+        chuck_size = 500
+        chuck_overlap = 100
         chunks = process_text(pdf, chuck_size, chuck_overlap)
-        # get the embeddings
         vector_store = get_embeddings(chunks, pdf)
         # ask the user for a question
         question = st.text_input("Ask a question")
@@ -68,13 +67,18 @@ def process_text(pdf, chuck_size, chuck_overlap):
         length_function=len
         )
     chunks = text_splitter.split_text(text=page_text)
-    return chunks
+    if chunks:
+        return chunks
+    else:
+        raise ValueError("Could not process text in PDF")
 
 # find or create the embeddings
 def get_embeddings(chunks, pdf):
     store_name = pdf.name[:-4]
     # check if vector store already exists
-    if os.path.exists(f"{store_name}.pkl"):
+    # if REUSE_PKL_STORE is True, then load the vector store from disk if it exists
+    reuse_pkl_store = os.getenv("REUSE_PKL_STORE")
+    if reuse_pkl_store == "True" and os.path.exists(f"{store_name}.pkl"):
         with open(f"{store_name}.pkl", "rb") as f:
             vector_store = pickle.load(f)
         st.write("Embeddings loaded from disk")
@@ -87,17 +91,21 @@ def get_embeddings(chunks, pdf):
         with open(f"{store_name}.pkl", "wb") as f:
             pickle.dump(vector_store, f)
         st.write("Embeddings saved to disk")
-    return vector_store
-
+    if vector_store is not None:
+        return vector_store
+    else:
+        raise ValueError("Issue creating and saving vector store")
 # retrieve the docs related to the question
 def retrieve_docs(question, vector_store):
     docs = vector_store.similarity_search(question, k=3)
-    # st.write(docs)
-    return docs 
+    if len(docs) == 0:
+        raise Exception("No documents found")
+    else:
+        return docs
 
 # generate the response
 def generate_response(docs, question):
-    llm = OpenAI(temperature=0.0, max_tokens=1000, model_name="gpt-3.5-turbo")
+    llm = ChatOpenAI(temperature=0.0, max_tokens=1000, model_name="gpt-3.5-turbo")
     chain = load_qa_chain(llm=llm, chain_type="stuff")
     with get_openai_callback() as cb:
         response = chain.run(input_documents=docs, question=question)
